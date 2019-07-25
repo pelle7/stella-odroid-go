@@ -20,6 +20,8 @@
 #ifndef SERIALIZER_HXX
 #define SERIALIZER_HXX
 
+#define SERIALIZER_USE_FILE
+
 #include <iostream>
 #include "bspf.hxx"
 
@@ -53,8 +55,13 @@ class Serializer
       The isValid() method must immediately be called to verify the stream
       was correctly initialized.
     */
+#ifdef SERIALIZER_USE_FILE
+    Serializer(FILE *file);
+    Serializer(const string& filename, bool readonly = false);
+#else
     Serializer(const string& filename, bool readonly = false);
     Serializer(void);
+#endif
 
     /**
       Destructor
@@ -192,6 +199,8 @@ class Serializer
     */
     void putBool(bool b);
 
+#ifdef SERIALIZER_USE_FILE
+#else
     std::string get()
     {
         stringstream *s = (stringstream*)myStream;
@@ -203,12 +212,16 @@ class Serializer
         stringstream *s = (stringstream*)myStream;
         s->str(data);
     }
-
+#endif
   private:
+#ifdef SERIALIZER_USE_FILE
+    FILE *myFile;
+    bool myWeOpened;
+#else
     // The stream to send the serialized data to.
     iostream* myStream;
     bool myUseFilestream;
-
+#endif
     enum {
       TruePattern  = 0xfe,
       FalsePattern = 0x01

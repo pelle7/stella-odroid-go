@@ -22,6 +22,7 @@
 
 #include "Serializer.hxx"
 
+#ifndef SERIALIZER_USE_FILE
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 Serializer::Serializer(const string& filename, bool readonly)
   : myStream(NULL),
@@ -222,3 +223,156 @@ void Serializer::putBool(bool b)
 {
   putByte(b ? TruePattern: FalsePattern);
 }
+#else
+
+Serializer::Serializer(FILE *file)
+{
+  myFile = file;
+  myWeOpened = false;
+  reset();
+}
+
+Serializer::Serializer(const string& filename, bool readonly)
+{
+  myWeOpened = true;
+  if (readonly)
+  {
+    myFile = fopen(filename.data(), "rb");
+  }
+  else
+  {
+    myFile = fopen(filename.data(), "wb");
+  }
+   
+  reset();
+}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Serializer::~Serializer(void)
+{
+  //
+}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+bool Serializer::isValid(void)
+{
+  return myFile != NULL;
+}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+void Serializer::reset(void)
+{
+  printf("S-RESET\n");
+}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+uInt8 Serializer::getByte(void)
+{
+//if(!lss_read(&tmp,sizeof(ULONG),1,fp)) return 0;
+  char buf;
+  fread(&buf,sizeof(char),1,myFile);
+  return buf;
+}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+void Serializer::getByteArray(uInt8* array, uInt32 size)
+{
+  fread(array,sizeof(char),size,myFile);
+}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+uInt16 Serializer::getShort(void)
+{
+  uInt16 val = 0;
+  fread(&val,sizeof(uInt16),1,myFile);
+  return val;
+}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+void Serializer::getShortArray(uInt16* array, uInt32 size)
+{
+  fread(array,sizeof(uInt16),size,myFile);
+}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+uInt32 Serializer::getInt(void)
+{
+  uInt32 val = 0;
+  fread(&val,sizeof(uInt32),1,myFile);
+  return val;
+}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+void Serializer::getIntArray(uInt32* array, uInt32 size)
+{
+  fread(array,sizeof(uInt32),size,myFile);
+}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+string Serializer::getString(void)
+{
+  int len = getInt();
+  string str;
+  str.resize(len);
+  fread(&str[0],sizeof(char),len,myFile);
+  return str;
+}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+bool Serializer::getBool(void)
+{
+  return getByte() == TruePattern;
+}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+void Serializer::putByte(uInt8 value)
+{
+ //if(!fwrite(&mY,sizeof(ULONG),1,fp)) return 0;
+  fwrite(&value, sizeof(uInt8), 1, myFile);
+}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+void Serializer::putByteArray(const uInt8* array, uInt32 size)
+{
+  fwrite(array, sizeof(uInt8), size, myFile);
+}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+void Serializer::putShort(uInt16 value)
+{
+  fwrite(&value, sizeof(uInt16), 1, myFile);
+}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+void Serializer::putShortArray(const uInt16* array, uInt32 size)
+{
+  fwrite(array, sizeof(uInt16), size, myFile);
+}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+void Serializer::putInt(uInt32 value)
+{
+  fwrite(&value, sizeof(uInt32), 1, myFile);
+}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+void Serializer::putIntArray(const uInt32* array, uInt32 size)
+{
+  fwrite(array, sizeof(uInt32), size, myFile);
+}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+void Serializer::putString(const string& str)
+{
+  int len = str.length();
+  putInt(len);
+  fwrite(str.data(), sizeof(char), len, myFile);
+}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+void Serializer::putBool(bool b)
+{
+  putByte(b ? TruePattern: FalsePattern);
+}
+#endif
+
